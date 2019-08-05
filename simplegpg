@@ -48,10 +48,16 @@ if [ -n "$1" -o $cmd = none ]; then
 fi
 
 readpw() {
+    # This function is expected to run in a subshell, i.e. $(...).
     stty -echo
-    trap 'stty echo; printf >/dev/tty "\n"' INT TERM EXIT
+    # Note: Don't rely on EXIT trap here since there's a bug in
+    # OpenBSD's ksh such that it doesn't execute EXIT traps for
+    # subshells. It's very easy to work around it, so just do so.
+    trap 'stty echo; printf >/dev/tty "\n"' INT TERM
     printf >/dev/tty '%s: ' "$1"
     read -r passphrase
+    printf >/dev/tty "\n"
+    stty echo
     printf '%s' "$passphrase"
 }
 
