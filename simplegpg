@@ -159,7 +159,7 @@ verify() {
 }
 
 # Create a temporary keychain
-homedir="$(mktemp -d simplegpg-XXXXXX)"
+homedir="$(mktemp -d "${TMPDIR:-/tmp}/simplegpg-XXXXXX")"
 cleanup() {
     rm -rf -- "$homedir"
 }

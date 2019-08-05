@@ -72,11 +72,10 @@ The signify options `-C` (checksum list), `-e` (embed), and `-z` (gzip
 archive) are currently unsupported. The `-t` (keytype) option doesn't
 make sense in this context.
 
-To create the illusion that no keyring is used, a temporary keyring
+To create the illusion that no keyring was used, a temporary keyring
 directory is created, the operation is performed, and the keyring is
-destroyed. Currently this keyring is created in the working directory,
-but a more suitable (and configurable) location should be used instead.
-GnuPG requires a keyring to do anything, so there's no way around it.
+destroyed. This keyring is created under `$TMPDIR`, or `/tmp` if unset.
+GnuPG requires a keyring to do anything, so there's no way around this.
 
 The String-to-Key (S2K) algorithm, i.e. the passphrase KDF, is run
 *three times* when using `-G`. Attacks on the protection passphrase only
