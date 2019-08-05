@@ -77,6 +77,22 @@ destroyed. Currently this keyring is created in the working directory,
 but a more suitable (and configurable) location should be used instead.
 GnuPG requires a keyring to do anything, so there's no way around it.
 
+The String-to-Key (S2K) algorithm, i.e. the passphrase KDF, is run
+*three times* when using `-G`. Attacks on the protection passphrase only
+need to run it once per guess, giving attackers and edge. This is simply
+a limitation of GnuPG. The problem is that GnuPG uses its own internal
+S2K scheme separate from the exported, OpenPGP S2K scheme. When
+generating a key, the internal S2K is run on the passphrase for storage
+on the internal keyring. Then to export the secret key it's run a second
+time to decrypt it, then a third time with the export S2K to re-encrypt
+it.
+
+The GnuPG interface is not powerful enough to fix this. The protection
+passphrase settings cannot be controlled independently when exporting a
+key (`--s2k-*` options are silently ignored), and gpg-agent isn't smart
+enough to learn freshly-generated keys. Fortunately this isn't a problem
+for `-S` since gpg-agent learns secret keys when their imported.
+
 Just as Signify keys have no concept of expiration, punting that
 question up to the context in which it's used, SimpleGPG keys are
 generated with no expiration date. Perhaps this feature of OpenPGP
