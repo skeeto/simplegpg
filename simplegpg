@@ -127,7 +127,7 @@ sign() {
         --armor \
         --detach-sign \
         --output "$sigfile" \
-        "$message"
+        -- "$message"
 }
 
 verify() {
@@ -142,7 +142,7 @@ verify() {
     if gpg --quiet --homedir "$homedir" --batch \
            --trust-model always \
            --verify \
-           "$sigfile" "$message" \
+           -- "$sigfile" "$message" \
            2>/dev/null; then
         if [ $quiet = no ]; then
             echo "Signature Verified"
