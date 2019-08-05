@@ -1,0 +1,169 @@
+#!/bin/sh
+
+set -e
+
+cmd=none
+comment='simplegpg key'
+message=
+passwd=yes
+pubkey=
+quiet=no
+seckey=
+sigfile=
+
+usage() {
+    cat >&2 <<EOF
+usage: simplegpg -G [-n] [-c comment] -p pubkey -s seckey
+       simplegpg -S [-x sigfile] -s seckey -m message
+       simplegpg -V [-q] [-x sigfile] -p pubkey -m message
+EOF
+}
+
+fatal() {
+    printf >&2 'simplegpg: %s\n' "$@"
+    exit 1
+}
+
+while getopts GSVc:m:np:qs:x: name
+do
+    case $name in
+    G) cmd=G;;
+    S) cmd=S;;
+    V) cmd=V;;
+    c) comment="$OPTARG";;
+    m) message="$OPTARG";;
+    n) passwd=no;;
+    p) pubkey="$OPTARG";;
+    q) quiet=yes;;
+    s) seckey="$OPTARG";;
+    x) sigfile="$OPTARG";;
+    ?) usage; exit 1;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+if [ -n "$1" -o $cmd = none ]; then
+    usage
+    exit 1
+fi
+
+readpw() {
+    stty -echo
+    trap 'stty echo; printf >/dev/tty "\n"' INT TERM EXIT
+    printf >/dev/tty '%s: ' "$1"
+    read -r passphrase
+    printf '%s' "$passphrase"
+}
+
+generate() {
+    if [ -z "$pubkey" -o -z "$seckey" ]; then
+        fatal "must specify pubkey and seckey"
+    fi
+    if [ "${pubkey##*.}" != asc -o \
+         "${seckey##*.}" != pgp -o \
+         "${pubkey%.*}" != "${seckey%.*}" ]; then
+        fatal "please use naming scheme of keyname.asc and keyname.pgp"
+    fi
+    if [ -e "$pubkey" ]; then
+        fatal "would clobber $pubkey"
+    fi
+    if [ -e "$seckey" ]; then
+        fatal "would clobber $seckey"
+    fi
+    if [ -z "$comment" ]; then
+        # This is a GnuPG limitation, not an OpenPGP limitation
+        fatal "comment must not be empty"
+    fi
+
+    # The passphrase must be managed by the script because otherwise
+    # GnuPG will ask for it more than necessary. It's too bad that
+    # gpg-agent can't pick up on the secret key at the same time it's
+    # generated. Also, the GnuPG --passphrase-repeat option is broken.
+    passphrase=
+    if [ $passwd = yes ]; then
+        passphrase=$(readpw "passphrase")
+        if [ -z "$passphrase" ]; then
+            fatal "please provide a passphrase"
+        fi
+        confirm=$(readpw "passphrase (confirm)")
+        if [ "$passphrase" != "$confirm" ]; then
+            fatal "passphases don't match"
+        fi
+    fi
+
+    printf '%s' "$passphrase" | \
+        gpg --quiet --homedir "$homedir" --batch \
+            --passphrase-fd 0 \
+            --quick-generate-key "$comment" ed25519 \
+            2>/dev/null  # GnuPG isn't quiet enough!
+    printf '%s' "$passphrase" | \
+        gpg --quiet --homedir "$homedir" --batch \
+            --pinentry-mode loopback \
+            --passphrase-fd 0 \
+            --armor \
+            --comment "$comment" \
+            --export-secret-keys \
+            --output "$seckey"
+    gpg --quiet --homedir "$homedir" --batch \
+        --armor \
+        --comment "$comment" \
+        --export \
+        --output "$pubkey"
+}
+
+sign() {
+    if [ -z "$message" -o -z "$seckey" ]; then
+        fatal "must specify message and seckey"
+    fi
+    if [ -z "$sigfile" ]; then
+        sigfile="$message.sig"
+    fi
+    if [ -e "$sigfile" ]; then
+        rm -- "$sigfile"
+    fi
+    gpg --quiet --homedir "$homedir" --batch \
+        --import "$seckey"
+    gpg --quiet --homedir "$homedir" --batch \
+        --armor \
+        --detach-sign \
+        --output "$sigfile" \
+        "$message"
+}
+
+verify() {
+    if [ -z "$message" -o -z "$pubkey" ]; then
+        fatal "must specify message and pubkey"
+    fi
+    if [ -z "$sigfile" ]; then
+        sigfile="$message.sig"
+    fi
+    gpg --quiet --homedir "$homedir" --batch \
+        --import "$pubkey"
+    if gpg --quiet --homedir "$homedir" --batch \
+           --trust-model always \
+           --verify \
+           "$sigfile" "$message" \
+           2>/dev/null; then
+        if [ $quiet = no ]; then
+            echo "Signature Verified"
+        fi
+        exit 0
+    else
+        fatal "signature verification failed"
+        exit 1
+    fi
+}
+
+# Create a temporary keychain
+homedir="$(mktemp -d simplegpg-XXXXXX)"
+cleanup() {
+    rm -rf -- "$homedir"
+}
+trap cleanup INT TERM EXIT
+chmod 700 "$homedir"
+
+case "$cmd" in
+    G) generate;;
+    S) sign;;
+    V) verify;;
+esac
