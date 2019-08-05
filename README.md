@@ -20,7 +20,8 @@ signatures are fundamentally incompatible with Signify signatures.
 
 ## Usage
 
-SimpleGPG could almost serve as a drop-in replacement for Signify:
+In terms of user interface, SimpleGPG could nearly serve as a drop-in
+replacement for Signify:
 
 ```
 usage: simplegpg -G [-n] [-c comment] -p pubkey -s seckey
@@ -33,7 +34,7 @@ usage: simplegpg -G [-n] [-c comment] -p pubkey -s seckey
 * `-V` Verify a signature with a message
 
 OpenPGP data is always ASCII-armored with no option for binary output,
-though binary input can still accepted. The file conventions for
+though binary input is still accepted as input. The file conventions for
 SimpleGPG are a bit different in order to accommodate PGP conventions:
 
 * "*keyname*.asc" for public keys
@@ -56,7 +57,7 @@ Generate a new keypair protected by a passphrase:
 
     $ simplegpg -G -p keyname.asc -s keyname.pgp
 
-Distribute and publish `keyname.asc` via the appropriate channels for
+Publish and distribute `keyname.asc` via the appropriate channels for
 your community. Later, sign `document.txt`, producing `document.txt.sig`:
 
     $ simplegpg -S -s keyname.pgp -m document.txt
@@ -119,7 +120,7 @@ your brain. It covers both `-G` and `-S`, leaving `-V` to SimpleGPG.
     $ simplegpg -V -p keyname.asc -m document.txt
 
 
+[efail]: https://efail.de/
+[minisign]: https://jedisct1.github.io/minisign/
 [p2p]: https://github.com/skeeto/passphrase2pgp
 [signify]: https://man.openbsd.org/signify
-[minisign]: https://jedisct1.github.io/minisign/
-[efail]: https://efail.de/
