@@ -143,12 +143,16 @@ verify() {
            --trust-model always \
            --verify \
            -- "$sigfile" "$message" \
-           2>/dev/null; then
+           2>"$homedir/log"; then
         if [ $quiet = no ]; then
             echo "Signature Verified"
         fi
         exit 0
     else
+        if [ $? -eq 2 ]; then
+            # pass through first GnuPG error message
+            head -n1 >&2 "$homedir/log"
+        fi
         fatal "signature verification failed"
         exit 1
     fi

@@ -101,12 +101,12 @@ should be used, though?
 GnuPG is loud and noisy with useless messages despite `--quiet` and
 `--batch`, so, in several cases, the script redirects its output to
 `/dev/null` and relies only on the exit status. However, when something
-goes wrong, the script's error messages are vague since it can't tell
-what went wrong, just that GnuPG failed. I'd like this to be better, but
-GnuPG does a poor job at communicating errors (see [EFAIL][efail]).
-Doing it properly requires parsing GnuPG's overly-complex output. For a
-great example of how shell commands *should* communicate a variety of
-possible error conditions to scripts in a simple way, see curl.
+unusual goes wrong, the script's error messages are vague since it can't
+tell exactly what went wrong, just that GnuPG failed. The problem is
+that GnuPG does a poor job at communicating errors (see [EFAIL][efail]),
+and even `--status-fd` doesn't convey enough information. For a great
+example of how shell commands *should* communicate a variety of possible
+error conditions to scripts in a simple way, see curl.
 
 ### passphrase2pgp
 
