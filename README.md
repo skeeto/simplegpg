@@ -90,8 +90,8 @@ it.
 The GnuPG interface is not powerful enough to fix this. The protection
 passphrase settings cannot be controlled independently when exporting a
 key (`--s2k-*` options are silently ignored), and gpg-agent isn't smart
-enough to learn freshly-generated keys. Fortunately this isn't a problem
-for `-S` since gpg-agent learns secret keys when their imported.
+enough to learn freshly-generated keys. The `-S` command has a similar
+problem since the S2K algorithm must be run twice instead of once.
 
 Just as Signify keys have no concept of expiration, punting that
 question up to the context in which it's used, SimpleGPG keys are
