@@ -103,7 +103,7 @@ generate() {
 
     gpg --quiet --homedir "$homedir" --batch --lock-never \
         --passphrase-fd 0 \
-        --quick-generate-key "$comment" ed25519 \
+        --quick-generate-key "$comment" ed25519 default none \
         2>/dev/null \
         <<EOF
 $passphrase
